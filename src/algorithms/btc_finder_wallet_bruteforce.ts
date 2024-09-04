@@ -1,5 +1,6 @@
 const bitcoin = require('bitcoinjs-lib');
 const secp256k1 = require('secp256k1');
+const worker_threads = require("worker_threads");
 
 class KeyFinder {
     findPrivateKey(targetPublicKeyHex: string, startRangeHex: string, endRangeHex: string): Buffer | null {
@@ -8,15 +9,15 @@ class KeyFinder {
 
         const targetPublicKey = Buffer.from(targetPublicKeyHex, 'hex');
 
-        // Itera sobre o intervalo de chaves privadas
+        // Iterate over the private key range
         for (let i = startRange; i <= endRange; i++) {
             const keyBuffer = this.bigIntToBuffer(i);
-            console.log(`Tentando chave privada: ${keyBuffer.toString('hex')}`);
+            console.log(`Trying private key: ${keyBuffer.toString('hex')}`);
 
             if (secp256k1.privateKeyVerify(keyBuffer)) {
                 const publicKey = secp256k1.publicKeyCreate(keyBuffer);
 
-                // Compara a chave pública gerada com a chave pública alvo
+                // Compare the generated public key with the target public key
                 if (Buffer.compare(publicKey, targetPublicKey) === 0) {
                     console.log(`Corresponding Public Key Found: ${publicKey.toString('hex')}`);
                     return keyBuffer;
@@ -27,13 +28,13 @@ class KeyFinder {
         return null;
     }
 
-    // Converte um BigInt em um Buffer de 32 bytes
+    // Convert a BigInt to a 32-byte Buffer
     bigIntToBuffer(bigInt: BigInt): Buffer {
         const hex = bigInt.toString(16).padStart(64, '0');
         return Buffer.from(hex, 'hex');
     }
 
-    // Resolve o quebra-cabeça tentando encontrar a chave privada 
+    // Solve the puzzle by searching for the private key
     solvePuzzle(targetPublicKeyHex: string, startRangeHex: string, endRangeHex: string): void {
         console.log("Searching for private key...");
 
@@ -42,22 +43,9 @@ class KeyFinder {
         if (privateKeyBuffer) {
             console.log(`Private key found: ${privateKeyBuffer.toString('hex')}`);
         } else {
-            console.log("Private key not found in the given range");
+            console.log("Private key not found in the given range.");
         }
     }
 }
 
-// Função principal para executar a busca
-function main() {
-    const finder = new KeyFinder();
-
-    const targetPublicKeyHex = "03633cbe3ec02b9401c5effa144c5b4d22f87940259634858fc7e59b1c09937852";
-
-    // Define o intervalo máximo para busca
-    const startRangeHex = "00000000000000000000000000000000000000000000000000000000000000"; // 0 em hexadecimal
-    const endRangeHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"; // 2^256-1 em hexadecimal
-
-    finder.solvePuzzle(targetPublicKeyHex, startRangeHex, endRangeHex);
-}
-
-main();
+export default { KeyFinder }

@@ -1,65 +1,41 @@
-const bitcoin = require('bitcoinjs-lib');
-const secp256k1 = require('secp256k1');
-const { wallets } = require(".././wallets.json")
-const worker_threads = require("worker_threads");
+import babyStepGiantStep from "./algorithms/bsgs";
+import wallets from "../wallets.json"
+import btc_bruteforce from "./algorithms/btc_finder_wallet_bruteforce";
 
-class KeyFinder {
-    findPrivateKey(targetPublicKeyHex: string, startRangeHex: string, endRangeHex: string): Buffer | null {
-        const startRange = BigInt(`0x${startRangeHex}`);
-        const endRange = BigInt(`0x${endRangeHex}`);
+function bsgs() {
+    const P = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F'); // secp256k1
+    const G = BigInt(2); // Base for the multiplicative group (arbitrary value)
 
-        const targetPublicKey = Buffer.from(targetPublicKeyHex, 'hex');
+    // The target public key in hexadecimal
+    const targetPublicKeyHex = '03633cbe3ec02b9401c5effa144c5b4d22f87940259634858fc7e59b1c09937852'; 
+    const targetPublicKey = Buffer.from(targetPublicKeyHex, 'hex');
 
-        // Itera sobre o intervalo de chaves privadas
-        for (let i = startRange; i <= endRange; i++) {
-            const keyBuffer = this.bigIntToBuffer(i);
-            console.log(`Tentando chave privada: ${keyBuffer.toString('hex')}`);
+    // Define the range for private keys
+    const startRange = BigInt('0x200000000000000000000000000000000'); // Start of the private key range
+    const endRange = BigInt('0x3ffffffffffffffffffffffffffffffff'); // End of the private key range
 
-            if (secp256k1.privateKeyVerify(keyBuffer)) {
-                const publicKey = secp256k1.publicKeyCreate(keyBuffer);
-
-                // Compara a chave pública gerada com a chave pública alvo
-                if (Buffer.compare(publicKey, targetPublicKey) === 0) {
-                    console.log(`Corresponding Public Key Found: ${publicKey.toString('hex')}`);
-                    return keyBuffer;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    // Converte um BigInt em um Buffer de 32 bytes
-    bigIntToBuffer(bigInt: BigInt): Buffer {
-        const hex = bigInt.toString(16).padStart(64, '0');
-        return Buffer.from(hex, 'hex');
-    }
-
-    // Resolve o quebra-cabeça tentando encontrar a chave privada 
-    solvePuzzle(targetPublicKeyHex: string, startRangeHex: string, endRangeHex: string): void {
-        console.log("Searching for private key...");
-
-        const privateKeyBuffer = this.findPrivateKey(targetPublicKeyHex, startRangeHex, endRangeHex);
-
-        if (privateKeyBuffer) {
-            console.log(`Private key found: ${privateKeyBuffer.toString('hex')}`);
-        } else {
-            console.log("Private key not found in the given range");
-        }
+    // Find the private key
+    const result = babyStepGiantStep(targetPublicKey, G, P, startRange, endRange);
+    if (result !== null) {
+        console.log(`Private key found: ${result.toString(16)}`);
+    } else {
+        console.log('Private key not found.');
     }
 }
 
-// Função principal para executar a busca
+function brute_force() {
+    const finder = new btc_bruteforce.KeyFinder();
+
+    // Define the range for private keys
+    const startRangeHex = "200000000000000000000000000000000"; // 0 in hexadecimal
+    const endRangeHex = "3ffffffffffffffffffffffffffffffff"; // 2^256-1 in hexadecimal
+
+    finder.solvePuzzle("03633cbe3ec02b9401c5effa144c5b4d22f87940259634858fc7e59b1c09937852", startRangeHex, endRangeHex);
+}
+
 function main() {
-    const finder = new KeyFinder();
-
-    const targetPublicKeyHex = `${wallets}`;
-
-    // Define o intervalo máximo para busca
-    const startRangeHex = "00000000000000000000000000000000000000000000000000000000000000"; // 0 em hexadecimal
-    const endRangeHex = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"; // 2^256-1 em hexadecimal
-
-    finder.solvePuzzle(targetPublicKeyHex, startRangeHex, endRangeHex);
+    bsgs()
 }
 
 main();
+

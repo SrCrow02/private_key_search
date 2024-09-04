@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "bitcoinjs-lib": "^6.1.6",
+    "crypto": "^1.0.1",
     "secp256k1": "^5.0.0"
   },
   "devDependencies": {
