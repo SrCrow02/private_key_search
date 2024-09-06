@@ -21,7 +21,7 @@ cd private_search_key
 npm i
 ts-node ./src/main.ts
 ```
-###OBS: You can choose whether to use brute force or bsgs in the main file.
+### OBS: You can choose whether to use brute force or bsgs in the main file.
 ```bash
 function main() {
     bsgs()
